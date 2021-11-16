@@ -1,16 +1,34 @@
-const { Client } = require('ldapts');
-const Pool = require('./pool');
-const Cache = require('./cache');
+import { Client } from 'ldapts';
+import { Pool } from './pool';
+import { Cache } from './cache';
+import { AuthCallback, IPluginAuth, Logger, PluginOptions } from '@verdaccio/types';
 
-class LDAPAuth {
-  constructor(config, stuff) {
+export type LDAPConfig = {
+  ldapURL: string;
+  ldapConnections?: number;
+  bindDN: string;
+  bindPW: string;
+  searchBase: string;
+  searchFilter: string;
+  groupBase: string;
+
+  cacheDuration?: number;
+};
+
+export default class LDAPAuth implements IPluginAuth<LDAPConfig> {
+  private logger: Logger;
+  private pool: Pool<Client>;
+  private cache: Cache;
+
+  public constructor(private config: LDAPConfig, stuff: PluginOptions<LDAPConfig>) {
     this.logger = stuff.logger;
     this.config = config;
     this.pool = new Pool(() => new Client({ url: this.config.ldapURL }), this.config.ldapConnections || 10);
-    this.cache = new Cache(this.config.cacheDuration, this.logger);
+    this.cache = new Cache(this.config.cacheDuration);
+    return this;
   }
 
-  authenticate(user, password, callback) {
+  public authenticate(user: string, password: string, callback: AuthCallback): void {
     const groups = this.cache.get(user, password);
     if (groups !== null) {
       callback(null, groups);
@@ -40,10 +58,10 @@ class LDAPAuth {
         await client.unbind();
         await client.bind(userDn, password);
 
-        const groupsList = groupsResult.searchEntries.map(group => group.cn);
+        const groupsList = groupsResult.searchEntries.map(group => group.cn as string); // We assume CN is unique.
         this.cache.put(user, password, groupsList);
         return groupsList;
-      } catch (err) {
+      } catch (err: any) {
         this.logger.warn(`LDAP query failed, ${err}`, err);
         throw err;
       } finally {
@@ -65,11 +83,7 @@ class LDAPAuth {
       callback(null, groups)
     }, err => {
       this.logger.trace(`Auth Fail for user ${user}: ${err}`);
-      callback(err, null)
+      callback(err, false)
     });
   }
 }
-
-module.exports = function(config, stuff) {
-  return new LDAPAuth(config, stuff);
-};

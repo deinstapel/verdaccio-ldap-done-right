@@ -2,14 +2,18 @@
   "name": "verdaccio-ldap-done-right",
   "version": "0.0.1-11",
   "description": "Verdaccio LDAP next gen",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "files": ["dist/**/*"],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@verdaccio/types": "^8.1.0",
-    "ldapts": "^1.10.0"
+    "@verdaccio/types": "^10.0.0",
+    "ldapts": "^3.1.1"
+  },
+  "devDependencies": {
+    "typescript": "^4.4.4"
   }
 }
