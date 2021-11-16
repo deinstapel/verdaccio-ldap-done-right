@@ -1,6 +1,6 @@
 {
   "name": "verdaccio-ldap-done-right",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Verdaccio LDAP next gen",
   "main": "dist/index.js",
   "files": [
